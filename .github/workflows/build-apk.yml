@@ -28,28 +28,29 @@ jobs:
         mkdir -p "$ANDROID_HOME/licenses" || true
         yes | sdkmanager --licenses || true
 
-    - name: Prepare Gradle Wrapper
+    - name: Validate Gradle Wrapper
+      uses: gradle/wrapper-validation-action@v2
+
+    - name: Ensure Executable Gradle Wrapper
       run: |
         if [ ! -f "./gradlew" ]; then
-          echo "Generating Gradle wrapper..."
           gradle wrapper
         fi
         chmod +x ./gradlew
 
-    - name: Build APK with Gradle
+    - name: Build with Gradle
       env:
-        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8"
-      run: ./gradlew assembleDebug --no-daemon --stacktrace
+        GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+      run: ./gradlew assembleDebug --no-daemon --stacktrace --info
 
-    - name: Locate APK files
-      run: |
-        echo "Recherche des APKs générés :"
-        find . -name "*.apk" -ls
+    - name: List Artifacts
+      if: always()
+      run: find . -type f -name "*.apk" -ls
 
-    - name: Upload APK Artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
+      if: always()
       with:
-        name: WearMessengerBridge-APK
-        path: "**/*.apk"
+        name: WearMessengerBridge-Debug-APK
+        path: "**/build/outputs/apk/**/*.apk"
         if-no-files-found: warn
-        
