@@ -19,16 +19,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Manual Accept Android SDK Licenses & Install
-        run: |
-          mkdir -p $ANDROID_HOME/licenses
-          printf "\n89377a62de827e7f112877c69f79ba0f0263d406" > $ANDROID_HOME/licenses/android-sdk-license
-          printf "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $ANDROID_HOME/licenses/android-sdk-license
-          printf "\nd56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_HOME/licenses/android-sdk-license
-          printf "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $ANDROID_HOME/licenses/android-sdk-license
-          printf "\n84831b9409646a247e30b3abb40e304b0b0681ce" > $ANDROID_HOME/licenses/android-sdk-preview-license
-          
-          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
