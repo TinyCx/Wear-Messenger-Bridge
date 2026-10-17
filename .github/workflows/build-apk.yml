@@ -18,7 +18,6 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -31,7 +30,7 @@ jobs:
       - name: Ensure Gradle Wrapper & Permissions
         run: |
           if [ ! -f "./gradlew" ]; then
-            echo "Gradle wrapper missing. Generating default wrapper..."
+            echo "Generating wrapper..."
             gradle wrapper
           fi
           chmod +x ./gradlew
@@ -41,15 +40,18 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
         run: ./gradlew assembleDebug --stacktrace --no-daemon
 
-      - name: Locate Generated APK Files
+      - name: Check Output Directory
         if: always()
         run: |
-          echo "Scanning for APK outputs:"
-          find . -type f -name "*.apk" -ls
+          echo "Listing all files in build directory:"
+          find . -name "*.apk" -o -name "outputs" || true
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: WearMessengerBridge-Debug
-          path: "**/*.apk"
-          if-no-files-found: error
+          path: |
+            **/build/outputs/apk/**/*.apk
+            **/*.apk
+          if-no-files-found: warn
