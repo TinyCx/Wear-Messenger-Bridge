@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -26,16 +26,17 @@ jobs:
 
       - name: Accept Android SDK Licenses
         run: |
-          export ANDROID_HOME=$ANDROID_SDK_ROOT
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Ensure Executable & Valid Wrapper
+      - name: Ensure Executable & Valid Gradle Wrapper
         run: |
           if [ -f "./gradlew" ]; then
             sed -i 's/\r$//' ./gradlew
             chmod +x ./gradlew
           fi
+
           if [ ! -f "./gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "Rebuilding Gradle wrapper binaries..."
             gradle wrapper --gradle-version 8.5 --distribution-type bin
             chmod +x ./gradlew
           fi
@@ -44,7 +45,7 @@ jobs:
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
         run: |
-          if [ -f "./gradlew" ]; then
+          if [ -f "./gradlew" ] && [ -x "./gradlew" ]; then
             ./gradlew assembleDebug --stacktrace --no-daemon
           else
             gradle assembleDebug --stacktrace --no-daemon
