@@ -19,18 +19,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set Android Environment & Accept Licenses
         run: |
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Ensure Gradle Wrapper & Permissions
+      - name: Validate, Normalize & Ensure Gradle Wrapper
         run: |
-          if [ ! -f "./gradlew" ]; then
-            echo "Generating wrapper..."
-            gradle wrapper
-          fi
+          set -e
+          sed -i 's/\r$//' ./gradlew || true
           chmod +x ./gradlew
+          
+          if [ ! -f "./gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "::warning::gradle-wrapper.jar missing. Installing standalone Gradle to regenerate..."
+            sudo apt-get update && sudo apt-get install -y gradle
+            gradle wrapper --gradle-version 8.5 --distribution-type bin
+            chmod +x ./gradlew
+          fi
 
       - name: Assemble Debug APK
         env:
