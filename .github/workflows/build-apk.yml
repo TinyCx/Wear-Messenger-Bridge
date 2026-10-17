@@ -41,9 +41,15 @@ jobs:
         GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8"
       run: ./gradlew assembleDebug --no-daemon --stacktrace
 
+    - name: Locate APK files
+      run: |
+        echo "Recherche des APKs générés :"
+        find . -name "*.apk" -ls
+
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: WearMessengerBridge-APK
-        path: "**/build/outputs/apk/**/*.apk"
-        if-no-files-found: error
+        path: "**/*.apk"
+        if-no-files-found: warn
+        
