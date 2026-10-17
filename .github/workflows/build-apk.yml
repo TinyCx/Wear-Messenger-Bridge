@@ -19,17 +19,36 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android Licenses & Pre-install SDK Tools
+      - name: Set Android Environment & Accept Licenses
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platform-tools" "platforms;android-34" "platforms;android-33" "build-tools;34.0.0" || true
+          export ANDROID_HOME=$ANDROID_SDK_ROOT
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Ensure Gradle Wrapper & Permissions
         run: |
           if [ ! -f "./gradlew" ]; then
             echo "Generating wrapper..."
             gradle wrapper
-          
+          fi
+          chmod +x ./gradlew
+
+      - name: Assemble Debug APK
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      - name: Check Output Directory
+        if: always()
+        run: |
+          echo "Listing all files in build directory:"
+          find . -name "*.apk" -o -name "outputs" || true
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WearMessengerBridge-Debug
+          path: |
+            **/build/outputs/apk/**/*.apk
+            **/*.apk
+          if-no-files-found: warn
