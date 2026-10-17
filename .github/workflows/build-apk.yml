@@ -45,6 +45,6 @@ jobs:
         with:
           name: WearMessengerBridge-Debug
           path: |
-            **/build/outputs/apk/**/*.apk
             **/*.apk
+            **/build/**/*.apk
           if-no-files-found: warn
