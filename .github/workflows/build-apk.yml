@@ -19,22 +19,34 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
-      with:
-        gradle-version: '8.2'
-        cache-disabled: true
-
-    - name: Find project and Build APK
+    - name: Auto-Fix and Build APK
       run: |
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-        BUILD_FILE=$(find . -maxdepth 3 -name "settings.gradle*" -o -name "build.gradle*" | head -n 1)
+        mkdir -p "$ANDROID_HOME/licenses"
+        printf "\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n" > "$ANDROID_HOME/licenses/android-sdk-license"
+        printf "\n84831b9409646a918e30573bab4c9c91346d8abd\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+        echo "=== FICHIERS DU PROJET ==="
+        find . -maxdepth 3 -not -path '*/.*'
+        BUILD_FILE=$(find . -maxdepth 3 -name "build.gradle*" | head -n 1)
+        if [ -z "$BUILD_FILE" ]; then
+          echo "ERREUR: Aucun fichier build.gradle dans ce depot !"
+          exit 1
+        fi
         PROJECT_DIR=$(dirname "$BUILD_FILE")
         cd "$PROJECT_DIR"
-        gradle assembleDebug --stacktrace
+        for V in 8.5 8.2 7.6.4; do
+          echo "=== ESSAI GRADLE $V ==="
+          wget -q https://services.gradle.org/distributions/gradle-${V}-bin.zip -O /tmp/g.zip
+          unzip -q -o /tmp/g.zip -d /tmp
+          if /tmp/gradle-${V}/bin/gradle assembleDebug --no-daemon; then
+            echo "SUCCES AVEC GRADLE $V"
+            exit 0
+          fi
+        done
+        exit 1
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: WearMessengerBridge-APK
         path: "**/*.apk"
+        
